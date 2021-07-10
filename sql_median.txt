@@ -1,0 +1,20 @@
+ WITH CTE AS
+(   SELECT  COUNTRY,
+            DAILY_VACCINATION, 
+            [half1] = NTILE(2) OVER(PARTITION BY COUNTRY ORDER BY DAILY_VACCINATION), 
+            [half2] = NTILE(2) OVER(PARTITION BY COUNTRY ORDER BY DAILY_VACCINATION DESC)
+    FROM    VAC
+    WHERE   COUNTRY IS NOT NULL
+)
+SELECT  COUNTRY,
+        (MAX(CASE WHEN Half1 = 1 THEN DAILY_VACCINATION END) + 
+        MIN(CASE WHEN Half2 = 1 THEN DAILY_VACCINATION END)) / 2.0
+FROM    CTE
+GROUP BY COUNTRY;
+
+SELECT x.Amount 
+FROM   (SELECT amount, 
+               Count(1) OVER (partition BY 'A')        AS TotalRows, 
+               Row_number() OVER (ORDER BY Amount ASC) AS AmountOrder 
+        FROM   facttransaction ft) x 
+WHERE  x.AmountOrder = Round(x.TotalRows / 2.0, 0) 
